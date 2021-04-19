@@ -1,4 +1,4 @@
-package com.example.apptemplate.arch
+package com.example.apptemplate.arch.view
 
 interface ViewBinder<T> {
 

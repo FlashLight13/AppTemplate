@@ -4,8 +4,8 @@ import android.os.AsyncTask
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.*
-import com.example.apptemplate.arch.ViewBinder
-import com.example.apptemplate.arch.ViewHolder
+import com.example.apptemplate.arch.view.ViewBinder
+import com.example.apptemplate.arch.view.ViewHolder
 
 class ViewBinderAdapter(
     private val adapterDataProviders: Map<Int, AdapterDataProvider>,
