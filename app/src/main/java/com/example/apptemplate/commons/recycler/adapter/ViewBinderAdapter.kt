@@ -1,40 +1,35 @@
 package com.example.apptemplate.commons.recycler.adapter
 
-import android.os.AsyncTask
-import android.view.View
 import android.view.ViewGroup
-import androidx.recyclerview.widget.*
-import com.example.apptemplate.arch.view.ViewBinder
-import com.example.apptemplate.arch.view.ViewHolder
+import androidx.paging.PagingDataAdapter
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.RecyclerView
+import androidx.viewbinding.ViewBinding
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 
 class ViewBinderAdapter(
-    private val adapterDataProviders: Map<Int, AdapterDataProvider>,
-    diff: Diff? = null,
-) :
-    RecyclerView.Adapter<ViewBinderAdapter.ViewBinderViewHolder>() {
-
-    private val differ = AsyncListDiffer(
-        AdapterListUpdateCallback(this),
-        AsyncDifferConfig.Builder(createDiffCallback(diff))
-            .setBackgroundThreadExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
-            .build()
-    )
-
-    fun updateItems(newItems: List<AdapterItem<*>>) {
-        differ.submitList(newItems)
-    }
+    dataItemCallback: DiffUtil.ItemCallback<Any>,
+    mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    workerDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val viewFactories: Map<Int, ViewFactory>,
+) : PagingDataAdapter<AdapterItem<out Any>, ViewBinderAdapter.ViewBinderViewHolder>(
+    AdapterItemCallback(dataItemCallback),
+    mainDispatcher,
+    workerDispatcher,
+) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewBinderViewHolder {
-        val provider = adapterDataProviders.getValue(viewType)
-        val view = provider.createView(parent)
-        val viewHolder = provider.createViewHolder(view)
-        val viewBinder: ViewBinder<in Any?> = provider.getViewBinder()
-        return ViewBinderViewHolder(view, viewHolder, viewBinder)
+        val factory: ViewFactory = viewFactories.getValue(viewType)
+        val viewBinding: ViewBinding = factory.createView(parent)
+        val viewBinder: ViewBinder<in ViewBinding, in Any?> = factory.createViewBinder()
+        return ViewBinderViewHolder(viewBinding, viewBinder)
     }
 
     override fun onBindViewHolder(holder: ViewBinderViewHolder, position: Int) {
-        val data: AdapterItem<*> = differ.currentList[position]
-        holder.bind(data.data)
+        getItem(position)?.let {
+            holder.bind(it.data)
+        }
     }
 
     override fun onViewRecycled(holder: ViewBinderViewHolder) {
@@ -47,59 +42,50 @@ class ViewBinderAdapter(
         return super.onFailedToRecycleView(holder)
     }
 
-    override fun getItemCount(): Int = differ.currentList.size
+    override fun getItemViewType(position: Int): Int = getItem(position)!!.viewType
 
-    companion object {
+    private class AdapterItemCallback(private val delegate: DiffUtil.ItemCallback<Any>) :
+        DiffUtil.ItemCallback<AdapterItem<out Any>>() {
 
-        private fun createDiffCallback(diff: Diff?): DiffUtil.ItemCallback<AdapterItem<*>> =
-            object : DiffUtil.ItemCallback<AdapterItem<*>>() {
-                override fun areItemsTheSame(
-                    oldItem: AdapterItem<*>,
-                    newItem: AdapterItem<*>,
-                ): Boolean {
-                    if (oldItem.viewType != newItem.viewType) {
-                        return false
-                    }
-                    return diff?.areDataTheSame(oldItem.data, newItem.data, true) ?: false
-                }
-
-                override fun areContentsTheSame(
-                    oldItem: AdapterItem<*>,
-                    newItem: AdapterItem<*>,
-                ): Boolean {
-                    if (oldItem.viewType != newItem.viewType) {
-                        return false
-                    }
-                    return diff?.areDataTheSame(oldItem.data, newItem.data, false) ?: false
-                }
+        override fun areItemsTheSame(
+            oldItem: AdapterItem<out Any>,
+            newItem: AdapterItem<out Any>
+        ): Boolean {
+            if (oldItem.viewType == newItem.viewType) {
+                return delegate.areItemsTheSame(oldItem.data, newItem.data)
             }
+            return false
+        }
+
+        override fun areContentsTheSame(
+            oldItem: AdapterItem<out Any>,
+            newItem: AdapterItem<out Any>
+        ): Boolean {
+            if (oldItem.viewType == newItem.viewType) {
+                return delegate.areContentsTheSame(oldItem.data, newItem.data)
+            }
+            return false
+        }
     }
 
-    interface AdapterDataProvider {
+    interface ViewFactory {
 
-        fun createView(parent: ViewGroup): View
-        fun createViewHolder(view: View): ViewHolder
-        fun getViewBinder(): ViewBinder<in Any?>
-    }
-
-    interface Diff {
-
-        fun areDataTheSame(old: Any?, new: Any?, fast: Boolean): Boolean
+        fun createView(parent: ViewGroup): ViewBinding
+        fun createViewBinder(): ViewBinder<in ViewBinding, in Any?>
     }
 
     class ViewBinderViewHolder(
-        view: View,
-        private val viewHolder: ViewHolder,
-        private val viewBinder: ViewBinder<in Any?>,
-    ) : RecyclerView.ViewHolder(view) {
+        private val viewBinding: ViewBinding,
+        private val viewBinder: ViewBinder<in ViewBinding, in Any?>,
+    ) : RecyclerView.ViewHolder(viewBinding.root) {
 
         private var isBound: Boolean = false
 
-        fun bind(data: Any?) {
+        fun bind(data: Any) {
             if (isBound) {
-                return
+                viewBinder.unbind(viewBinding)
             }
-            viewBinder.bind(viewHolder, data)
+            viewBinder.bind(viewBinding, data)
             isBound = true
         }
 
@@ -107,7 +93,7 @@ class ViewBinderAdapter(
             if (!isBound) {
                 return
             }
-            viewBinder.unbind(viewHolder)
+            viewBinder.unbind(viewBinding)
             isBound = false
         }
     }

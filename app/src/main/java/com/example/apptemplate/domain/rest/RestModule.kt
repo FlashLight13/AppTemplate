@@ -22,7 +22,6 @@ class RestModule {
     @Provides
     fun provideRetrofit(moshi: Moshi): Retrofit =
         Retrofit.Builder()
-            .addCallAdapterFactory(RxJava3CallAdapterFactory.createSynchronous())
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
 }
