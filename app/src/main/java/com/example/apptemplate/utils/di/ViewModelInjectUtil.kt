@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 
 object ViewModelInjectUtil {
 
+    @Suppress("unchecked_cast")
     inline fun <reified T : ViewModel> on(
         activity: Activity,
         crossinline createViewModel: () -> T

@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">AppTemplate</string>
+
+    <string name="payment_methods_title">Payment methods</string>
+    <string name="error_no_network">Failed to connect 😢</string>
+    <string name="error_empty">Empty</string>
+    <string name="error_server_error">Server error 😢</string>
+    <string name="error_unknown">Unknown error</string>
 </resources>

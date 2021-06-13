@@ -1,5 +1,6 @@
-package com.example.apptemplate.payment.domain.rest
+package com.example.apptemplate.payment.domain.di
 
+import com.example.apptemplate.payment.domain.rest.PaymentMethodsRest
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

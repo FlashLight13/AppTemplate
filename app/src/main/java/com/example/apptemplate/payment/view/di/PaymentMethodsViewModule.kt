@@ -1,7 +1,8 @@
-package com.example.apptemplate.payment.view
+package com.example.apptemplate.payment.view.di
 
 import android.app.Activity
 import com.example.apptemplate.payment.domain.PaymentMethodsPagingSource
+import com.example.apptemplate.payment.view.PaymentMethodsViewModel
 import com.example.apptemplate.utils.di.ViewModelInjectUtil
 import dagger.Module
 import dagger.Provides

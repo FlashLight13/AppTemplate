@@ -11,5 +11,9 @@ class PaymentMethodsPagingSource @Inject constructor(private val interactor: Pay
     override fun getRefreshKey(state: PagingState<Unit, PaymentMethod>): Unit = Unit
 
     override suspend fun load(params: LoadParams<Unit>): LoadResult<Unit, PaymentMethod> =
-        LoadResult.Page(interactor.getPaymentMethods(), Unit, Unit)
+        try {
+            LoadResult.Page(interactor.getPaymentMethods(), null, null)
+        } catch (th: Throwable) {
+            LoadResult.Error(th)
+        }
 }
